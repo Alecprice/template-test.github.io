@@ -1,10 +1,10 @@
 {
   "name": "tv-phone-remote",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
-    "build": "cat source.part.00 source.part.01 source.part.02a source.part.02b source.part.02c source.part.02d source.part.02e source.part.03a source.part.03b source.part.03c > source.tgz && tar -xzf source.tgz && cat v05.patch.00 v05.patch.01 v05.patch.02 v05.patch.03 | base64 -d > v05-overrides.tgz && tar -xzf v05-overrides.tgz && cat v06.patch.00 v06.patch.01 v06.patch.02 v06.patch.03 v06.patch.04 v06.patch.05 v06.patch.06 v06.patch.07 | base64 -d > v06-overrides.tgz && tar -xzf v06-overrides.tgz && vite build"
+    "build": "cat source.part.00 source.part.01 source.part.02a source.part.02b source.part.02c source.part.02d source.part.02e source.part.03a source.part.03b source.part.03c > source.tgz && tar -xzf source.tgz && cat v05.patch.00 v05.patch.01 v05.patch.02 v05.patch.03 | base64 -d > v05-overrides.tgz && tar -xzf v05-overrides.tgz && cat v06.patch.00 v06.patch.01 v06.patch.02 v06.patch.03 v06.patch.04 v06.patch.05 v06.patch.06 v06.patch.07 | base64 -d > v06-overrides.tgz && tar -xzf v06-overrides.tgz && cat v061.patch.00 v061.patch.01 v061.patch.02 v061.patch.03 v061.patch.04 v061.patch.05 v061.patch.06 v061.patch.07 v061.patch.08 v061.patch.09 | base64 -d > v061-overrides.tgz && tar -xzf v061-overrides.tgz && vite build"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
