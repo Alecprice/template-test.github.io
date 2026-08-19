@@ -1,5 +1,5 @@
 # TV Phone Remote
 
-Vercel test deployment for the TV Phone universal Samsung + Fire TV remote project.
+Git-backed Vercel test deployment for the Samsung + Fire TV universal remote project.
 
-The `source.tgz` build archive contains the cloud-safe v0.4 React/PWA frontend. Vercel expands it during the build. Real TV transports remain LAN-local and are not hosted in Vercel.
+The cloud-safe v0.4 React/PWA frontend is stored as verified source chunks and reconstructed during Vercel's build. TV control transports remain LAN-local/native rather than running from Vercel's cloud.

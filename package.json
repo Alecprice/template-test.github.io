@@ -1,10 +1,10 @@
 {
   "name": "tv-phone-remote",
   "private": true,
-  "version": "0.4.2",
+  "version": "0.4.3",
   "type": "module",
   "scripts": {
-    "build": "tar -xzf source.tgz && vite build"
+    "build": "cat source.part.00 source.part.01 source.part.02a source.part.02b source.part.02c source.part.02d source.part.02e source.part.03a source.part.03b source.part.03c > source.tgz && tar -xzf source.tgz && vite build"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
