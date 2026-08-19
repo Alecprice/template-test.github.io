@@ -1,10 +1,10 @@
 {
   "name": "tv-phone-remote",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "scripts": {
-    "build": "tar -xzf source.tgz && tsc -b && vite build"
+    "build": "tar -xzf source.tgz && vite build"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
@@ -13,10 +13,7 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "^5.9.2",
     "vite": "^7.1.0",
     "vite-plugin-pwa": "^1.0.0"
   },
