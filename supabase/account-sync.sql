@@ -1,49 +1,72 @@
 -- TV Phone Remote account sync schema
--- Email/password auth is provided by Supabase Auth. This schema stores only app-owned data.
+-- Matches the production Supabase project and the v0.7 account-sync client.
+-- Safe account-owned state is stored in one versioned JSON document. Pairing credentials remain local.
+
+begin;
 
 create table if not exists public.user_sync_state (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  display_name text,
-  streaming_services jsonb not null default '[]'::jsonb,
-  favorite_app_ids jsonb not null default '[]'::jsonb,
-  activities jsonb not null default '[]'::jsonb,
-  tv_devices jsonb not null default '[]'::jsonb,
-  ui_preferences jsonb not null default '{}'::jsonb,
-  app_preferences jsonb not null default '{}'::jsonb,
+  state jsonb not null default '{}'::jsonb check (jsonb_typeof(state) = 'object'),
   version bigint not null default 1,
+  updated_by_device_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-alter table public.user_sync_state enable row level security;
+create or replace function public.bump_user_sync_state_version()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.version := old.version + 1;
+  new.updated_at := now();
+  return new;
+end;
+$$;
 
+drop trigger if exists user_sync_state_bump_version on public.user_sync_state;
+create trigger user_sync_state_bump_version
+before update on public.user_sync_state
+for each row
+execute function public.bump_user_sync_state_version();
+
+alter table public.user_sync_state enable row level security;
 revoke all on table public.user_sync_state from anon;
 grant select, insert, update, delete on table public.user_sync_state to authenticated;
 
-create policy "users can read own sync state"
-on public.user_sync_state
-for select
-to authenticated
-using ((select auth.uid()) = user_id);
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='user_sync_state' and policyname='Users can read own sync state') then
+    create policy "Users can read own sync state" on public.user_sync_state for select to authenticated using ((select auth.uid()) = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='user_sync_state' and policyname='Users can insert own sync state') then
+    create policy "Users can insert own sync state" on public.user_sync_state for insert to authenticated with check ((select auth.uid()) = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='user_sync_state' and policyname='Users can update own sync state') then
+    create policy "Users can update own sync state" on public.user_sync_state for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='user_sync_state' and policyname='Users can delete own sync state') then
+    create policy "Users can delete own sync state" on public.user_sync_state for delete to authenticated using ((select auth.uid()) = user_id);
+  end if;
+end;
+$$;
 
-create policy "users can insert own sync state"
-on public.user_sync_state
-for insert
-to authenticated
-with check ((select auth.uid()) = user_id);
-
-create policy "users can update own sync state"
-on public.user_sync_state
-for update
-to authenticated
-using ((select auth.uid()) = user_id)
-with check ((select auth.uid()) = user_id);
-
-create policy "users can delete own sync state"
-on public.user_sync_state
-for delete
-to authenticated
-using ((select auth.uid()) = user_id);
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'user_sync_state'
+     ) then
+    execute 'alter publication supabase_realtime add table public.user_sync_state';
+  end if;
+end;
+$$;
 
 comment on table public.user_sync_state is
-'Account-owned TV Phone Remote state. LAN-only connection/session details should remain in local device storage and must not be written here.';
+'Account-owned TV Phone Remote state. Samsung/Fire TV pairing credentials and bridge bearer tokens remain on the local device.';
+
+commit;
