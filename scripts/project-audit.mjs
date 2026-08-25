@@ -2,10 +2,24 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const required = ["src/main.tsx","src/App.tsx","src/types/remote.ts","src/lib/adapters/samsungAdapter.ts","src/lib/adapters/fireTvAdapter.ts","bridge/server.mjs","vite.config.ts","capacitor.config.ts"];
+const required = [
+  "src/main.tsx",
+  "src/App.tsx",
+  "src/types/remote.ts",
+  "src/lib/adapters/samsungAdapter.ts",
+  "src/lib/adapters/fireTvAdapter.ts",
+  "src/lib/cloud.ts",
+  "src/lib/useAccountSync.ts",
+  "src/components/AccountPanel.tsx",
+  "vite.config.ts",
+];
 const failures = [];
-for (const rel of required) if (!fs.existsSync(path.join(root, rel))) failures.push(`Missing required file: ${rel}`);
-for (const rel of ["src", "bridge"]) {
+
+for (const rel of required) {
+  if (!fs.existsSync(path.join(root, rel))) failures.push(`Missing required file: ${rel}`);
+}
+
+for (const rel of ["src"]) {
   const dir = path.join(root, rel);
   if (!fs.existsSync(dir)) continue;
   const stack = [dir];
@@ -21,7 +35,11 @@ for (const rel of ["src", "bridge"]) {
     }
   }
 }
-for (const rel of ["public/tv-phone.svg", "public/tv-phone-192.png", "public/tv-phone-512.png"]) if (!fs.existsSync(path.join(root, rel))) failures.push(`Missing PWA asset: ${rel}`);
+
+if (!fs.existsSync(path.join(root, "public/tv-phone.svg"))) {
+  failures.push("Missing PWA asset: public/tv-phone.svg");
+}
+
 if (failures.length) {
   console.error("TV Phone project audit failed:");
   for (const failure of failures) console.error(`- ${failure}`);
