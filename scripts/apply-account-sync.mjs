@@ -80,12 +80,22 @@ remote = replaceOrFail(
   "  const submitText = () => { const value = text.trim(); if (!value) return; voice.stop(); speechOut.stop(); onSendText(value); setText(''); setKeyboardOpen(false) }\n  const closeKeyboard = () => { voice.stop(); speechOut.stop(); setKeyboardOpen(false) }\n  const startDictation = () => {\n    speechOut.stop()\n    speechOut.reset()\n    dictationBaseRef.current = text.trim()\n    voice.reset()\n    voice.start()\n  }\n  const toggleReadAloud = () => {\n    voice.stop()\n    if (speechOut.speaking) speechOut.stop()\n    else speechOut.speak(text)\n  }\n  const selectInput = (input: InputSource) => { onSetInput(input); setInputOpen(false) }",
   'RemoteView coordinated voice actions',
 )
-remote = replaceOrFail(
-  remote,
-  `            <div className={\`voice-panel ${voice.listening ? 'voice-panel--listening' : ''}\`}>\n              <button className="voice-record-button" onClick={voice.listening ? voice.stop : voice.start} disabled={!voice.supported}>{voice.listening ? <MicOff /> : <Mic />}<span>{!voice.supported ? 'Voice unavailable' : voice.listening ? 'Stop listening' : 'Start voice-to-text'}</span></button>\n              <small>{voice.listening ? 'Listening… speak naturally.' : 'Microphone permission may be requested by your browser.'}</small>\n            </div>`,
-  `            <div className={\`voice-panel ${voice.listening ? 'voice-panel--listening' : ''}\`}>\n              <div className="voice-tool-grid">\n                <button type="button" className="voice-record-button" aria-pressed={voice.listening} onClick={voice.listening ? voice.stop : startDictation} disabled={!voice.supported}>{voice.listening ? <MicOff /> : <Mic />}<span>{!voice.supported ? 'Dictation unavailable' : voice.listening ? 'Stop listening' : 'Dictate text'}</span></button>\n                <button type="button" className={\`voice-speak-button ${speechOut.speaking ? 'voice-speak-button--speaking' : ''}\`} aria-pressed={speechOut.speaking} onClick={toggleReadAloud} disabled={!speechOut.supported || (!text.trim() && !speechOut.speaking)}>{speechOut.speaking ? <Square /> : <Volume2 />}<span>{!speechOut.supported ? 'Read aloud unavailable' : speechOut.speaking ? 'Stop speaking' : 'Read aloud'}</span></button>\n              </div>\n              <small>{voice.listening ? 'Listening… your words appear in the text box.' : speechOut.speaking ? 'Speaking on this phone or computer.' : 'Dictate text, edit it, hear it aloud, or send it to the TV.'}</small>\n            </div>`,
-  'RemoteView voice tool controls',
-)
+const oldVoicePanel = [
+  "            <div className={`voice-panel ${voice.listening ? 'voice-panel--listening' : ''}`}>",
+  "              <button className=\"voice-record-button\" onClick={voice.listening ? voice.stop : voice.start} disabled={!voice.supported}>{voice.listening ? <MicOff /> : <Mic />}<span>{!voice.supported ? 'Voice unavailable' : voice.listening ? 'Stop listening' : 'Start voice-to-text'}</span></button>",
+  "              <small>{voice.listening ? 'Listening… speak naturally.' : 'Microphone permission may be requested by your browser.'}</small>",
+  '            </div>',
+].join('\n')
+const newVoicePanel = [
+  "            <div className={`voice-panel ${voice.listening ? 'voice-panel--listening' : ''}`}>",
+  '              <div className="voice-tool-grid">',
+  "                <button type=\"button\" className=\"voice-record-button\" aria-pressed={voice.listening} onClick={voice.listening ? voice.stop : startDictation} disabled={!voice.supported}>{voice.listening ? <MicOff /> : <Mic />}<span>{!voice.supported ? 'Dictation unavailable' : voice.listening ? 'Stop listening' : 'Dictate text'}</span></button>",
+  "                <button type=\"button\" className={`voice-speak-button ${speechOut.speaking ? 'voice-speak-button--speaking' : ''}`} aria-pressed={speechOut.speaking} onClick={toggleReadAloud} disabled={!speechOut.supported || (!text.trim() && !speechOut.speaking)}>{speechOut.speaking ? <Square /> : <Volume2 />}<span>{!speechOut.supported ? 'Read aloud unavailable' : speechOut.speaking ? 'Stop speaking' : 'Read aloud'}</span></button>",
+  '              </div>',
+  "              <small>{voice.listening ? 'Listening… your words appear in the text box.' : speechOut.speaking ? 'Speaking on this phone or computer.' : 'Dictate text, edit it, hear it aloud, or send it to the TV.'}</small>",
+  '            </div>',
+].join('\n')
+remote = replaceOrFail(remote, oldVoicePanel, newVoicePanel, 'RemoteView voice tool controls')
 remote = replaceOrFail(
   remote,
   "            {voice.error && <div className=\"voice-error\" role=\"alert\">{voice.error}</div>}\n            <textarea",
