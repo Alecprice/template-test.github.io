@@ -68,7 +68,7 @@ if (fs.existsSync(synthesisPath)) {
 const modePath = path.join(root, "src/lib/appMode.ts");
 if (fs.existsSync(modePath)) {
   const mode = fs.readFileSync(modePath, "utf8");
-  for (const marker of ["'kids'", "'light'", "'dark'", "tv-phone:app-mode:v1", "data-app-mode"]) {
+  for (const marker of ["'kids'", "'light'", "'dark'", "tv-phone:app-mode:v1", "dataset.appMode"]) {
     if (!mode.includes(marker)) failures.push(`App mode implementation missing: ${marker}`);
   }
 }
