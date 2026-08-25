@@ -12,8 +12,14 @@ await copyFile('modes/KidsModeSettings.tsx', 'src/components/KidsModeSettings.ts
 let main = await readFile('src/main.tsx', 'utf8')
 main = replaceOrFail(
   main,
-  "import App from './App'\nimport './styles.css'\nregisterSW({ immediate: true })",
-  "import App from './App'\nimport { applyAppModeTheme, loadAppMode } from './lib/appMode'\nimport './styles.css'\n\napplyAppModeTheme(loadAppMode())\nregisterSW({ immediate: true })",
+  "import App from './App'",
+  "import App from './App'\nimport { applyAppModeTheme, loadAppMode } from './lib/appMode'",
+  'main mode import',
+)
+main = replaceOrFail(
+  main,
+  'registerSW({ immediate: true })',
+  'applyAppModeTheme(loadAppMode())\nregisterSW({ immediate: true })',
   'main mode bootstrap',
 )
 await writeFile('src/main.tsx', main)
