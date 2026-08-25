@@ -1,13 +1,5 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 
-let vite = await readFile('vite.config.ts', 'utf8')
-
-if (!vite.includes("return 'vendor-supabase'")) {
-  const end = vite.lastIndexOf('\n})')
-  if (end < 0) throw new Error('Bundle polish failed: could not locate Vite config end')
-  const build = `,\n  build: {\n    rollupOptions: {\n      output: {\n        manualChunks(id) {\n          if (id.includes('node_modules/@supabase')) return 'vendor-supabase'\n          if (id.includes('node_modules/lucide-react')) return 'vendor-icons'\n          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor-react'\n          return undefined\n        },\n      },\n    },\n  }`
-  vite = `${vite.slice(0, end)}${build}${vite.slice(end)}`
-  await writeFile('vite.config.ts', vite)
-}
+await writeFile('vite.config.ts', `import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport { VitePWA } from 'vite-plugin-pwa'\n\nexport default defineConfig({\n  plugins: [\n    react(),\n    VitePWA({\n      registerType: 'autoUpdate',\n      includeAssets: [\n        'tv-phone.svg',\n        'tv-phone-180.png',\n        'tv-phone-192.png',\n        'tv-phone-512.png',\n        'tv-phone-maskable-512.png',\n      ],\n      manifest: {\n        id: '/',\n        name: 'TV Phone Remote',\n        short_name: 'TV Phone',\n        description: 'Universal phone and tablet remote for Samsung TV and Fire TV devices.',\n        theme_color: '#07090d',\n        background_color: '#07090d',\n        display: 'standalone',\n        orientation: 'any',\n        start_url: '/',\n        scope: '/',\n        lang: 'en-US',\n        categories: ['utilities', 'productivity'],\n        icons: [\n          { src: '/tv-phone-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },\n          { src: '/tv-phone-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },\n          { src: '/tv-phone-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },\n        ],\n      },\n      workbox: {\n        navigateFallback: '/index.html',\n        cleanupOutdatedCaches: true,\n        clientsClaim: true,\n        skipWaiting: true,\n        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],\n      },\n    }),\n  ],\n  build: {\n    rollupOptions: {\n      output: {\n        manualChunks(id) {\n          if (id.includes('node_modules/@supabase')) return 'vendor-supabase'\n          if (id.includes('node_modules/lucide-react')) return 'vendor-icons'\n          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor-react'\n          return undefined\n        },\n      },\n    },\n  },\n})\n`)
 
 console.log('Vendor bundle polish applied')
