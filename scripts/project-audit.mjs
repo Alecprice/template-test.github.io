@@ -12,8 +12,11 @@ const required = [
   "src/lib/useAccountSync.ts",
   "src/lib/useSpeechRecognition.ts",
   "src/lib/useSpeechSynthesis.ts",
+  "src/lib/appMode.ts",
   "src/components/AccountPanel.tsx",
   "src/components/PwaInstallCard.tsx",
+  "src/components/ModeSelector.tsx",
+  "src/components/KidsModeSettings.tsx",
   "src/components/RemoteView.tsx",
   "index.html",
   "vite.config.ts",
@@ -62,6 +65,30 @@ if (fs.existsSync(synthesisPath)) {
   }
 }
 
+const modePath = path.join(root, "src/lib/appMode.ts");
+if (fs.existsSync(modePath)) {
+  const mode = fs.readFileSync(modePath, "utf8");
+  for (const marker of ["'kids'", "'light'", "'dark'", "tv-phone:app-mode:v1", "data-app-mode"]) {
+    if (!mode.includes(marker)) failures.push(`App mode implementation missing: ${marker}`);
+  }
+}
+
+const selectorPath = path.join(root, "src/components/ModeSelector.tsx");
+if (fs.existsSync(selectorPath)) {
+  const selector = fs.readFileSync(selectorPath, "utf8");
+  for (const marker of ["Kids Safe", "Full Light", "Full Dark", "radiogroup", "aria-checked"]) {
+    if (!selector.includes(marker)) failures.push(`Mode selector accessibility missing: ${marker}`);
+  }
+}
+
+const syncPath = path.join(root, "src/lib/useAccountSync.ts");
+if (fs.existsSync(syncPath)) {
+  const sync = fs.readFileSync(syncPath, "utf8");
+  for (const marker of ["appMode: AppMode", "current.setAppMode", "options.appMode"]) {
+    if (!sync.includes(marker)) failures.push(`Account mode sync missing: ${marker}`);
+  }
+}
+
 const indexPath = path.join(root, "index.html");
 if (fs.existsSync(indexPath)) {
   const html = fs.readFileSync(indexPath, "utf8");
@@ -82,13 +109,22 @@ const settingsPath = path.join(root, "src/components/SettingsView.tsx");
 if (fs.existsSync(settingsPath)) {
   const settings = fs.readFileSync(settingsPath, "utf8");
   if (!settings.includes("<PwaInstallCard />")) failures.push("Settings is missing the PWA install card");
+  if (!settings.includes("<ModeSelector")) failures.push("Settings is missing the three-mode selector");
+}
+
+const appPath = path.join(root, "src/App.tsx");
+if (fs.existsSync(appPath)) {
+  const app = fs.readFileSync(appPath, "utf8");
+  for (const marker of ["KidsModeSettings", "appMode === 'kids'", "applyAppModeTheme", "setAppMode: setAppModeState"]) {
+    if (!app.includes(marker)) failures.push(`App mode routing missing: ${marker}`);
+  }
 }
 
 const stylesPath = path.join(root, "src/styles.css");
 if (fs.existsSync(stylesPath)) {
   const styles = fs.readFileSync(stylesPath, "utf8");
-  for (const marker of ["@media (min-width:820px) and (pointer:coarse)", "@media (min-width:900px) and (min-height:700px)", "overscroll-behavior:none", "touch-action:manipulation"]) {
-    if (!styles.includes(marker)) failures.push(`Tablet/native interaction styling missing: ${marker}`);
+  for (const marker of ["@media (min-width:820px) and (pointer:coarse)", "@media (min-width:900px) and (min-height:700px)", "overscroll-behavior:none", "touch-action:manipulation", "html[data-app-mode='light']", "html[data-app-mode='kids']", ".bottom-nav button:nth-child(2)"]) {
+    if (!styles.includes(marker)) failures.push(`Responsive/theme styling missing: ${marker}`);
   }
 }
 
