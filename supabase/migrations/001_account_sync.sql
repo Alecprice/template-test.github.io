@@ -28,34 +28,33 @@ for each row
 execute function public.bump_user_sync_state_version();
 
 alter table public.user_sync_state enable row level security;
-
 revoke all on table public.user_sync_state from anon;
 grant select, insert, update, delete on table public.user_sync_state to authenticated;
 
-drop policy if exists "Users can read own TV Phone sync state" on public.user_sync_state;
-create policy "Users can read own TV Phone sync state"
+drop policy if exists "Users can read own sync state" on public.user_sync_state;
+create policy "Users can read own sync state"
 on public.user_sync_state
 for select
 to authenticated
 using ((select auth.uid()) = user_id);
 
-drop policy if exists "Users can create own TV Phone sync state" on public.user_sync_state;
-create policy "Users can create own TV Phone sync state"
+drop policy if exists "Users can insert own sync state" on public.user_sync_state;
+create policy "Users can insert own sync state"
 on public.user_sync_state
 for insert
 to authenticated
 with check ((select auth.uid()) = user_id);
 
-drop policy if exists "Users can update own TV Phone sync state" on public.user_sync_state;
-create policy "Users can update own TV Phone sync state"
+drop policy if exists "Users can update own sync state" on public.user_sync_state;
+create policy "Users can update own sync state"
 on public.user_sync_state
 for update
 to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
-drop policy if exists "Users can delete own TV Phone sync state" on public.user_sync_state;
-create policy "Users can delete own TV Phone sync state"
+drop policy if exists "Users can delete own sync state" on public.user_sync_state;
+create policy "Users can delete own sync state"
 on public.user_sync_state
 for delete
 to authenticated
@@ -75,5 +74,8 @@ begin
   end if;
 end;
 $$;
+
+comment on table public.user_sync_state is
+'Account-owned TV Phone Remote state. Samsung/Fire TV pairing credentials and bridge bearer tokens remain on the local device.';
 
 commit;
