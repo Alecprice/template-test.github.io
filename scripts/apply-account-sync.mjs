@@ -15,6 +15,7 @@ function modernizeEmptyTypedRefs(source, label) {
 await copyFile('account-sync/cloud.ts', 'src/lib/cloud.ts')
 await copyFile('account-sync/useAccountSync.ts', 'src/lib/useAccountSync.ts')
 await copyFile('account-sync/AccountPanel.tsx', 'src/components/AccountPanel.tsx')
+await copyFile('voice-tools/useSpeechSynthesis.ts', 'src/lib/useSpeechSynthesis.ts')
 
 let app = await readFile('src/App.tsx', 'utf8')
 app = modernizeEmptyTypedRefs(app, 'App.tsx')
@@ -47,6 +48,61 @@ await writeFile('src/App.tsx', app)
 let speech = await readFile('src/lib/useSpeechRecognition.ts', 'utf8')
 speech = modernizeEmptyTypedRefs(speech, 'useSpeechRecognition.ts')
 await writeFile('src/lib/useSpeechRecognition.ts', speech)
+
+let remote = await readFile('src/components/RemoteView.tsx', 'utf8')
+remote = replaceOrFail(
+  remote,
+  '  Play, RefreshCw, Rewind, RotateCcw, Tv, Volume1, Volume2, VolumeX,',
+  '  Play, RefreshCw, Rewind, RotateCcw, Square, Tv, Volume1, Volume2, VolumeX,',
+  'RemoteView speech stop icon',
+)
+remote = replaceOrFail(
+  remote,
+  "import { useEffect, useMemo, useState } from 'react'",
+  "import { useEffect, useMemo, useRef, useState } from 'react'",
+  'RemoteView dictation ref import',
+)
+remote = replaceOrFail(
+  remote,
+  "import { useSpeechRecognition } from '../lib/useSpeechRecognition'",
+  "import { useSpeechRecognition } from '../lib/useSpeechRecognition'\nimport { useSpeechSynthesis } from '../lib/useSpeechSynthesis'",
+  'RemoteView speech synthesis import',
+)
+remote = replaceOrFail(
+  remote,
+  "  const [text, setText] = useState('')\n  const [mode, setMode] = useState<RemoteMode>('buttons')\n  const voice = useSpeechRecognition((value) => setText(value))",
+  "  const [text, setText] = useState('')\n  const [mode, setMode] = useState<RemoteMode>('buttons')\n  const dictationBaseRef = useRef('')\n  const speechOut = useSpeechSynthesis()\n  const voice = useSpeechRecognition((value) => {\n    const base = dictationBaseRef.current\n    setText(base ? `${base}${value ? ` ${value}` : ''}` : value)\n  })",
+  'RemoteView shared voice tools state',
+)
+remote = replaceOrFail(
+  remote,
+  "  const submitText = () => { const value = text.trim(); if (!value) return; voice.stop(); onSendText(value); setText(''); setKeyboardOpen(false) }\n  const closeKeyboard = () => { voice.stop(); setKeyboardOpen(false) }\n  const selectInput = (input: InputSource) => { onSetInput(input); setInputOpen(false) }",
+  "  const submitText = () => { const value = text.trim(); if (!value) return; voice.stop(); speechOut.stop(); onSendText(value); setText(''); setKeyboardOpen(false) }\n  const closeKeyboard = () => { voice.stop(); speechOut.stop(); setKeyboardOpen(false) }\n  const startDictation = () => {\n    speechOut.stop()\n    speechOut.reset()\n    dictationBaseRef.current = text.trim()\n    voice.reset()\n    voice.start()\n  }\n  const toggleReadAloud = () => {\n    voice.stop()\n    if (speechOut.speaking) speechOut.stop()\n    else speechOut.speak(text)\n  }\n  const selectInput = (input: InputSource) => { onSetInput(input); setInputOpen(false) }",
+  'RemoteView coordinated voice actions',
+)
+remote = replaceOrFail(
+  remote,
+  `            <div className={\`voice-panel ${voice.listening ? 'voice-panel--listening' : ''}\`}>\n              <button className="voice-record-button" onClick={voice.listening ? voice.stop : voice.start} disabled={!voice.supported}>{voice.listening ? <MicOff /> : <Mic />}<span>{!voice.supported ? 'Voice unavailable' : voice.listening ? 'Stop listening' : 'Start voice-to-text'}</span></button>\n              <small>{voice.listening ? 'Listening… speak naturally.' : 'Microphone permission may be requested by your browser.'}</small>\n            </div>`,
+  `            <div className={\`voice-panel ${voice.listening ? 'voice-panel--listening' : ''}\`}>\n              <div className="voice-tool-grid">\n                <button type="button" className="voice-record-button" aria-pressed={voice.listening} onClick={voice.listening ? voice.stop : startDictation} disabled={!voice.supported}>{voice.listening ? <MicOff /> : <Mic />}<span>{!voice.supported ? 'Dictation unavailable' : voice.listening ? 'Stop listening' : 'Dictate text'}</span></button>\n                <button type="button" className={\`voice-speak-button ${speechOut.speaking ? 'voice-speak-button--speaking' : ''}\`} aria-pressed={speechOut.speaking} onClick={toggleReadAloud} disabled={!speechOut.supported || (!text.trim() && !speechOut.speaking)}>{speechOut.speaking ? <Square /> : <Volume2 />}<span>{!speechOut.supported ? 'Read aloud unavailable' : speechOut.speaking ? 'Stop speaking' : 'Read aloud'}</span></button>\n              </div>\n              <small>{voice.listening ? 'Listening… your words appear in the text box.' : speechOut.speaking ? 'Speaking on this phone or computer.' : 'Dictate text, edit it, hear it aloud, or send it to the TV.'}</small>\n            </div>`,
+  'RemoteView voice tool controls',
+)
+remote = replaceOrFail(
+  remote,
+  "            {voice.error && <div className=\"voice-error\" role=\"alert\">{voice.error}</div>}\n            <textarea",
+  "            {voice.error && <div className=\"voice-error\" role=\"alert\">{voice.error}</div>}\n            {speechOut.error && <div className=\"voice-error\" role=\"alert\">{speechOut.error}</div>}\n            <textarea",
+  'RemoteView speech output error',
+)
+remote = replaceOrFail(
+  remote,
+  "            <div className=\"voice-privacy-note\">Speech recognition can be processed by the browser/device or by a browser speech service depending on platform.</div>",
+  "            <div className=\"voice-privacy-note\">Dictation support varies by browser and may use a browser speech service. Read aloud uses your device/browser speech engine and plays through this device, not the TV.</div>",
+  'RemoteView voice privacy and output copy',
+)
+await writeFile('src/components/RemoteView.tsx', remote)
+
+let styles = await readFile('src/styles.css', 'utf8')
+styles += `\n/* v0.7 coordinated dictation + read aloud */\n.voice-tool-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }\n.voice-speak-button { min-height:48px; border:1px solid rgba(124,102,255,.18); border-radius:12px; background:#17182a; color:#e6e2ff; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:850; cursor:pointer; }\n.voice-speak-button svg { width:18px; }\n.voice-speak-button--speaking { border-color:rgba(124,102,255,.42); background:rgba(124,102,255,.13); box-shadow:inset 0 0 0 1px rgba(124,102,255,.07); }\n.voice-speak-button:disabled { opacity:.45; cursor:not-allowed; }\n@media (max-width:420px) { .voice-tool-grid { grid-template-columns:1fr; } }\n`
+await writeFile('src/styles.css', styles)
 
 let settings = await readFile('src/components/SettingsView.tsx', 'utf8')
 settings = replaceOrFail(
@@ -87,4 +143,4 @@ settings = replaceOrFail(
 )
 await writeFile('src/components/SettingsView.tsx', settings)
 
-console.log('Account sync patch applied')
+console.log('Account sync + voice tools patch applied')
