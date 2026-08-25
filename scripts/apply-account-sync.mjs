@@ -5,11 +5,19 @@ function replaceOrFail(source, needle, replacement, label) {
   return source.replace(needle, replacement)
 }
 
+function modernizeEmptyTypedRefs(source, label) {
+  const pattern = /useRef<([^>\n]+)>\(\)/g
+  const matches = source.match(pattern) ?? []
+  if (!matches.length) throw new Error(`Account sync patch failed: no empty typed refs found in ${label}`)
+  return source.replace(pattern, 'useRef<$1 | undefined>(undefined)')
+}
+
 await copyFile('account-sync/cloud.ts', 'src/lib/cloud.ts')
 await copyFile('account-sync/useAccountSync.ts', 'src/lib/useAccountSync.ts')
 await copyFile('account-sync/AccountPanel.tsx', 'src/components/AccountPanel.tsx')
 
 let app = await readFile('src/App.tsx', 'utf8')
+app = modernizeEmptyTypedRefs(app, 'App.tsx')
 app = replaceOrFail(
   app,
   "import { storage } from './lib/storage'",
@@ -35,6 +43,10 @@ app = replaceOrFail(
   'Settings account prop',
 )
 await writeFile('src/App.tsx', app)
+
+let speech = await readFile('src/lib/useSpeechRecognition.ts', 'utf8')
+speech = modernizeEmptyTypedRefs(speech, 'useSpeechRecognition.ts')
+await writeFile('src/lib/useSpeechRecognition.ts', speech)
 
 let settings = await readFile('src/components/SettingsView.tsx', 'utf8')
 settings = replaceOrFail(
