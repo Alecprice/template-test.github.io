@@ -255,15 +255,16 @@ export function useAccountSync(options: Options) {
       setStatus('local')
       return
     }
+    const client = supabase
     let active = true
-    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+    void client.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) return
       if (sessionError) setError(sessionError.message)
       setUser(data.session?.user ?? null)
       setReady(true)
       setStatus(data.session?.user ? 'loading' : 'local')
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
       if (!active) return
       setUser(session?.user ?? null)
       setReady(true)
@@ -279,7 +280,8 @@ export function useAccountSync(options: Options) {
   }, [])
 
   useEffect(() => {
-    if (!user || !supabase) return
+    const client = supabase
+    if (!user || !client) return
     let cancelled = false
     setStatus('loading')
     setError('')
@@ -319,7 +321,7 @@ export function useAccountSync(options: Options) {
 
     void hydrate()
 
-    const channel = supabase
+    const channel = client
       .channel(`tv-phone-user-sync-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_sync_state', filter: `user_id=eq.${user.id}` }, (payload) => {
         const row = payload.new as Partial<RemoteRow> & { user_id?: string }
@@ -334,7 +336,7 @@ export function useAccountSync(options: Options) {
 
     return () => {
       cancelled = true
-      void supabase.removeChannel(channel)
+      void client.removeChannel(channel)
     }
   }, [user?.id, applyState])
 
