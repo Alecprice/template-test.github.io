@@ -10,7 +10,10 @@ const required = [
   "src/lib/adapters/fireTvAdapter.ts",
   "src/lib/cloud.ts",
   "src/lib/useAccountSync.ts",
+  "src/lib/useSpeechRecognition.ts",
+  "src/lib/useSpeechSynthesis.ts",
   "src/components/AccountPanel.tsx",
+  "src/components/RemoteView.tsx",
   "vite.config.ts",
 ];
 const failures = [];
@@ -38,6 +41,22 @@ for (const rel of ["src"]) {
 
 if (!fs.existsSync(path.join(root, "public/tv-phone.svg"))) {
   failures.push("Missing PWA asset: public/tv-phone.svg");
+}
+
+const remotePath = path.join(root, "src/components/RemoteView.tsx");
+if (fs.existsSync(remotePath)) {
+  const remote = fs.readFileSync(remotePath, "utf8");
+  for (const marker of ["Dictate text", "Read aloud", "Stop speaking", "Send to TV", "useSpeechSynthesis"]) {
+    if (!remote.includes(marker)) failures.push(`Remote voice tools missing marker: ${marker}`);
+  }
+}
+
+const synthesisPath = path.join(root, "src/lib/useSpeechSynthesis.ts");
+if (fs.existsSync(synthesisPath)) {
+  const synthesis = fs.readFileSync(synthesisPath, "utf8");
+  for (const marker of ["speechSynthesis.cancel()", "SpeechSynthesisUtterance", "utterance.onend", "utterance.onerror"]) {
+    if (!synthesis.includes(marker)) failures.push(`Speech synthesis safety wiring missing: ${marker}`);
+  }
 }
 
 if (failures.length) {
