@@ -1,5 +1,5 @@
 import { Moon, ShieldCheck, Sun } from 'lucide-react'
-import type { AppMode } from './appMode'
+import type { AppMode } from '../lib/appMode'
 
 interface Props {
   mode: AppMode
