@@ -12,10 +12,10 @@ export interface AccountPanelProps {
   error: string
   message: string
   lastSyncedAt?: number
-  onSignIn: (email: string, password: string) => Promise<void>
-  onSignUp: (email: string, password: string) => Promise<void>
-  onSignOut: () => Promise<void>
-  onSyncNow: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+  syncNow: () => Promise<void>
 }
 
 function statusCopy(status: AccountSyncStatus) {
@@ -53,8 +53,8 @@ export function AccountPanel(props: AccountPanelProps) {
             </div>
             <div className="security-note"><ShieldCheck /><span><strong>Your setup follows this account</strong><br />TV names, rooms, favorites, streaming shortcuts, activities, and shared preferences sync between devices. Pairing secrets stay on each device.</span></div>
             <div className="bridge-test-row">
-              <button className="button-secondary" type="button" disabled={props.busy || props.status === 'syncing'} onClick={() => void props.onSyncNow()}><RefreshCw /> Sync now</button>
-              <button className="button-secondary" type="button" disabled={props.busy} onClick={() => void props.onSignOut()}><LogOut /> Sign out</button>
+              <button className="button-secondary" type="button" disabled={props.busy || props.status === 'syncing'} onClick={() => void props.syncNow()}><RefreshCw /> Sync now</button>
+              <button className="button-secondary" type="button" disabled={props.busy} onClick={() => void props.signOut()}><LogOut /> Sign out</button>
             </div>
           </>
         ) : (
@@ -62,8 +62,8 @@ export function AccountPanel(props: AccountPanelProps) {
             <label><span>Email</span><input type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
             <label><span>Password</span><input type="password" autoComplete="current-password" placeholder="8+ characters" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
             <div className="bridge-test-row">
-              <button className="button-primary" type="button" disabled={props.busy || !email.trim() || !password} onClick={() => void props.onSignIn(email, password)}><LogIn /> {props.busy ? 'Working…' : 'Sign in'}</button>
-              <button className="button-secondary" type="button" disabled={props.busy || !email.trim() || password.length < 8} onClick={() => void props.onSignUp(email, password)}><UserRound /> Create account</button>
+              <button className="button-primary" type="button" disabled={props.busy || !email.trim() || !password} onClick={() => void props.signIn(email, password)}><LogIn /> {props.busy ? 'Working…' : 'Sign in'}</button>
+              <button className="button-secondary" type="button" disabled={props.busy || !email.trim() || password.length < 8} onClick={() => void props.signUp(email, password)}><UserRound /> Create account</button>
             </div>
             <small>Your current setup will become the starting profile when you create an account. Google/Apple login can be linked later without changing your saved TV Phone data.</small>
           </>
