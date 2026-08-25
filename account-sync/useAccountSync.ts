@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
-import type { Activity, BridgeConfig, TvDevice } from '../src/types/remote'
-import { storage } from '../src/lib/storage'
+import type { Activity, BridgeConfig, TvDevice } from '../types/remote'
+import { storage } from './storage'
 import { cloudConfigured, supabase } from './cloud'
 
 export type AccountSyncStatus = 'local' | 'loading' | 'syncing' | 'synced' | 'offline' | 'error'
@@ -190,11 +190,11 @@ export function useAccountSync(options: Options) {
   const [status, setStatus] = useState<AccountSyncStatus>(cloudConfigured ? 'loading' : 'local')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [lastSyncedAt, setLastSyncedAt] = useState<number>()
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | undefined>(undefined)
   const [syncGeneration, setSyncGeneration] = useState(0)
-  const hydratedUserRef = useRef<string>()
+  const hydratedUserRef = useRef<string | undefined>(undefined)
   const skipNextSaveRef = useRef(false)
-  const saveTimerRef = useRef<number>()
+  const saveTimerRef = useRef<number | undefined>(undefined)
 
   const applyState = useCallback((userId: string, state: AccountStateV1, updatedAt?: string) => {
     const current = latestRef.current
