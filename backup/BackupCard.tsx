@@ -70,8 +70,9 @@ export function BackupCard(props: Props) {
       return
     }
     try {
-      const parsed = parseTvPhoneBackup(JSON.parse(await file.text()))
-      if (backupContainsSecretKeys(parsed)) throw new Error('Backup contains fields that are not allowed to be restored.')
+      const raw = JSON.parse(await file.text()) as unknown
+      if (backupContainsSecretKeys(raw)) throw new Error('That backup contains pairing or connection secrets and cannot be restored.')
+      const parsed = parseTvPhoneBackup(raw)
       setPending(parsed)
     } catch (readError) {
       setError(readError instanceof Error ? readError.message : 'Could not read that backup file.')
@@ -102,9 +103,10 @@ export function BackupCard(props: Props) {
 
         {pending && (
           <div className="backup-preview" role="status">
-            <div><strong>Ready to restore</strong><span>{pending.devices.length} TV{pending.devices.length === 1 ? '' : 's'} · {pending.activities.length} activit{pending.activities.length === 1 ? 'y' : 'ies'} · exported {new Date(pending.exportedAt).toLocaleDateString()}</span></div>
+            <div><strong>Ready to replace this device’s setup</strong><span>{pending.devices.length} TV{pending.devices.length === 1 ? '' : 's'} · {pending.activities.length} activit{pending.activities.length === 1 ? 'y' : 'ies'} · exported {new Date(pending.exportedAt).toLocaleDateString()}</span></div>
+            <small className="backup-preview__warning">Restoring replaces the TVs and activities currently stored on this device. Export a backup first if you may need them later.</small>
             <div className="backup-preview__buttons">
-              <button type="button" className="button-primary" onClick={restore}><RotateCcw /> Restore this backup</button>
+              <button type="button" className="button-primary" onClick={restore}><RotateCcw /> Replace with this backup</button>
               <button type="button" className="button-secondary" onClick={() => setPending(null)}>Cancel</button>
             </div>
           </div>
