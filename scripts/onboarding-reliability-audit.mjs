@@ -10,7 +10,7 @@ const requiredApp = [
   "setTab('settings')",
   'Parent controls',
   'empty-onboarding__settings',
-  '<BottomNav active={tab} onChange={setTab} />',
+  '<BottomNav active={tab} onChange={setTab} appMode={appMode} />',
 ]
 for (const marker of requiredApp) {
   if (!app.includes(marker)) throw new Error(`Onboarding reliability audit failed: App missing ${marker}`)
