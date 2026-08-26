@@ -22,53 +22,16 @@ jobs:
           node-version-file: .nvmrc
       - name: Generate exact npm lockfile
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Enforce deterministic installs
+      - name: Enforce deterministic Vercel install
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import json
 
-          ci = '''name: TV Phone CI
-
-          on:
-            push:
-              branches:
-                - master
-                - 'build/**'
-            pull_request:
-
-          concurrency:
-            group: tv-phone-ci-${{ github.workflow }}-${{ github.ref }}
-            cancel-in-progress: true
-
-          permissions:
-            contents: read
-
-          jobs:
-            verify:
-              runs-on: ubuntu-latest
-              timeout-minutes: 10
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-node@v4
-                  with:
-                    node-version-file: .nvmrc
-                    cache: npm
-                    cache-dependency-path: package-lock.json
-                - name: Install locked dependencies
-                  run: npm ci --no-audit --no-fund
-                - name: Production build and release gates
-                  run: npm run build
-          '''
-          # Dedent the YAML block embedded under the shell script.
-          import textwrap
-          Path('.github/workflows/ci.yml').write_text(textwrap.dedent(ci).lstrip())
-
           config_path = Path('vercel.json')
           config = json.loads(config_path.read_text())
           config['installCommand'] = 'npm ci --no-audit --no-fund'
-          # Keep install command close to the build settings for readability.
           ordered = {'$schema': config.pop('$schema')}
           ordered['installCommand'] = config.pop('installCommand')
           ordered.update(config)
@@ -99,7 +62,7 @@ jobs:
         run: |
           git config user.name "Alec Price"
           git config user.email "52548136+Alecprice@users.noreply.github.com"
-          git add package-lock.json .github/workflows/ci.yml vercel.json scripts/apply-delivery-security.mjs scripts/delivery-security-audit.mjs
+          git add package-lock.json vercel.json scripts/apply-delivery-security.mjs scripts/delivery-security-audit.mjs
           git diff --cached --check
-          git commit -m "Lock dependency graph and enforce npm ci"
+          git commit -m "Lock dependency graph and enforce Vercel npm ci"
           git push origin HEAD:build/mode-themes-v0.8
