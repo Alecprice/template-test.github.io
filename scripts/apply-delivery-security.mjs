@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises'
 
 const config = {
   $schema: 'https://openapi.vercel.sh/vercel.json',
+  installCommand: 'npm ci --no-audit --no-fund',
   buildCommand: 'npm run build',
   outputDirectory: 'dist',
   cleanUrls: true,

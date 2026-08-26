@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
 const config = JSON.parse(await readFile('vercel.json', 'utf8'))
+if (config.installCommand !== 'npm ci --no-audit --no-fund') throw new Error('Delivery security audit failed: deterministic npm install command missing')
 const rules = Array.isArray(config.headers) ? config.headers : []
 
 function headerValue(source, key) {
