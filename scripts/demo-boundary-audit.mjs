@@ -6,7 +6,8 @@ const provenance = await readFile('src/lib/sampleProvenance.ts', 'utf8')
 
 for (const marker of [
   "from './lib/sampleProvenance'",
-  "const explicit = localStorage.getItem('tv-phone:demo')",
+  "from './lib/browserStorage'",
+  "const explicit = safeLocalGet('tv-phone:demo')",
   "if (explicit !== null) return explicit !== 'false'",
   'return stripUntouchedSampleDevices(devices).length === 0',
   "setStatusText('Account setup loaded · real-device mode enabled')",
@@ -17,6 +18,8 @@ for (const marker of [
 ]) {
   if (!app.includes(marker)) throw new Error(`Demo boundary audit failed: App missing ${marker}`)
 }
+if (app.includes("localStorage.getItem('tv-phone:demo')")) throw new Error('Demo boundary audit failed: unsafe demo storage read returned')
+
 for (const marker of [
   "from './sampleProvenance'",
   'const devices = stripUntouchedSampleDevices(current.devices).map(sanitizeDevice)',
