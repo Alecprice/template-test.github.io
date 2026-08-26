@@ -100,13 +100,24 @@ export function DeviceRecoveryCard({ devices, bridgeConfig }: Props) {
       }
     }
 
+    if (device.kind === 'combo') {
+      return {
+        id: device.id,
+        name: device.name,
+        kind: device.kind,
+        level: 'verify',
+        title: 'Combined TV setup needs both transports verified',
+        detail: 'A combined setup can partially fail even when the other side still works. Test the TV/display controls and streaming-device controls separately, then repair only the side that fails.',
+      }
+    }
+
     return {
       id: device.id,
       name: device.name,
       kind: device.kind,
       level: 'verify',
-      title: 'Combined TV setup needs both transports verified',
-      detail: 'A combined setup can partially fail even when the other side still works. Test the TV/display controls and streaming-device controls separately, then repair only the side that fails.',
+      title: 'TV setup needs verification',
+      detail: 'Test the available controls and repair only the transport that is not responding.',
     }
   })
 
