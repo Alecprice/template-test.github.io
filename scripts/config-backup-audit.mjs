@@ -12,9 +12,23 @@ for (const marker of [
   "cleaned[key] = 'disconnected'",
   'backupContainsSecretKeys',
   'parseTvPhoneBackup',
+  'MAX_DEVICES = 64',
+  'MAX_ACTIVITIES = 250',
+  'duplicate TV id',
+  'duplicate activity id',
+  'if (backupContainsSecretKeys(value))',
 ]) if (!helper.includes(marker)) throw new Error(`Config backup audit failed: helper missing ${marker}`)
 
-for (const marker of ['MAX_BACKUP_BYTES = 1_000_000', 'Export safe backup', 'Restore this backup', 'Pairing credentials were not restored', 'backupContainsSecretKeys(backup)', 'backupContainsSecretKeys(parsed)']) {
+for (const marker of [
+  'MAX_BACKUP_BYTES = 1_000_000',
+  'Export safe backup',
+  'Replace with this backup',
+  'Ready to replace this device’s setup',
+  'Restoring replaces the TVs and activities currently stored on this device',
+  'Pairing credentials were not restored',
+  'backupContainsSecretKeys(backup)',
+  'backupContainsSecretKeys(raw)',
+]) {
   if (!card.includes(marker)) throw new Error(`Config backup audit failed: card missing ${marker}`)
 }
 if (card.includes('bridgeConfig.token') || card.includes('remoteCertificate}') || card.includes('device.token')) {
@@ -30,4 +44,4 @@ for (const marker of ['.backup-card', '.backup-preview', '.backup-file-input', '
   if (!styles.includes(marker)) throw new Error(`Config backup audit failed: styles missing ${marker}`)
 }
 
-console.log('TV Phone safe configuration backup audit passed.')
+console.log('TV Phone hardened safe configuration backup audit passed.')
