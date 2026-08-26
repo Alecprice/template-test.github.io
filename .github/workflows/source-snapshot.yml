@@ -1,0 +1,38 @@
+name: Capture TV Phone Generated Source
+
+on:
+  push:
+    branches:
+      - build/lockfile-gen
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: build/mode-themes-v0.8
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build generated application
+        run: npm run build
+      - name: Upload generated engineering snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-phone-generated-source
+          path: |
+            src
+            dist/index.html
+            dist/manifest.webmanifest
+            vercel.json
+          if-no-files-found: error
+          retention-days: 1
