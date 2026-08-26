@@ -8,8 +8,8 @@ const requiredApp = [
   'app-shell--empty',
   'No TVs added yet',
   "setTab('settings')",
-  "appMode !== 'kids'",
   'Parent controls',
+  'empty-onboarding__settings',
   '<BottomNav active={tab} onChange={setTab} />',
 ]
 for (const marker of requiredApp) {
@@ -34,6 +34,12 @@ const requiredSync = [
 for (const marker of requiredSync) {
   if (!sync.includes(marker)) throw new Error(`Onboarding reliability audit failed: sync missing ${marker}`)
 }
-if (!styles.includes('.empty-onboarding__actions')) throw new Error('Onboarding reliability audit failed: empty state styles missing')
+const requiredStyles = [
+  '.empty-onboarding__settings',
+  "html[data-app-mode='kids'] .empty-onboarding > .button-primary",
+]
+for (const marker of requiredStyles) {
+  if (!styles.includes(marker)) throw new Error(`Onboarding reliability audit failed: styles missing ${marker}`)
+}
 
 console.log('TV Phone onboarding reliability audit passed.')
