@@ -1,4 +1,4 @@
-import { CheckCircle2, Clipboard, ClipboardCheck, Laptop, Router, ShieldCheck, Smartphone, Tv } from 'lucide-react'
+import { AlertTriangle, Clipboard, ClipboardCheck, Laptop, Router, ShieldCheck, Smartphone, Tv } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { BridgeConfig, TvDevice } from '../types/remote'
 
@@ -7,28 +7,31 @@ interface Props {
   bridgeConfig: BridgeConfig
 }
 
+const DEMO_DEVICE_IDS = new Set(['samsung-living', 'fire-living', 'combo-living', 'fire-bedroom'])
 const SETUP_COMMANDS = `npm install
 npm run bridge:setup
 npm run bridge:doctor
 npm run bridge:start`
 
+type CopyState = 'idle' | 'copied' | 'error'
+
 export function SetupGuideCard({ devices, bridgeConfig }: Props) {
-  const [copied, setCopied] = useState(false)
+  const [copyState, setCopyState] = useState<CopyState>('idle')
   const bridgeUrl = bridgeConfig.url.trim()
   const bridgeToken = bridgeConfig.token.trim()
   const bridgeReady = Boolean(bridgeUrl && bridgeToken)
   const hostedHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
   const localHttpBridge = /^http:\/\//i.test(bridgeUrl)
   const blockedByBrowser = hostedHttps && localHttpBridge
-  const realDevices = useMemo(() => devices.filter((device) => !device.id.includes('living') && !device.id.includes('bedroom')), [devices])
+  const realDevices = useMemo(() => devices.filter((device) => !DEMO_DEVICE_IDS.has(device.id)), [devices])
 
   const copyCommands = async () => {
     try {
       await navigator.clipboard.writeText(SETUP_COMMANDS)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1800)
+      setCopyState('copied')
+      window.setTimeout(() => setCopyState('idle'), 1800)
     } catch {
-      setCopied(false)
+      setCopyState('error')
     }
   }
 
@@ -67,7 +70,8 @@ export function SetupGuideCard({ devices, bridgeConfig }: Props) {
           <summary><Laptop /> Helper computer commands</summary>
           <pre><code>{SETUP_COMMANDS}</code></pre>
           <button type="button" className="button-secondary setup-guide-copy" onClick={() => void copyCommands()}>
-            {copied ? <ClipboardCheck /> : <Clipboard />}{copied ? 'Copied' : 'Copy commands'}
+            {copyState === 'copied' ? <ClipboardCheck /> : copyState === 'error' ? <AlertTriangle /> : <Clipboard />}
+            {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed — select commands above' : 'Copy commands'}
           </button>
         </details>
 
