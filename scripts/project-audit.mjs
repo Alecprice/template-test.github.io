@@ -17,6 +17,7 @@ const required = [
   "src/components/PwaInstallCard.tsx",
   "src/components/ModeSelector.tsx",
   "src/components/KidsModeSettings.tsx",
+  "src/components/BottomNav.tsx",
   "src/components/RemoteView.tsx",
   "index.html",
   "vite.config.ts",
@@ -81,6 +82,14 @@ if (fs.existsSync(selectorPath)) {
   }
 }
 
+const bottomNavPath = path.join(root, "src/components/BottomNav.tsx");
+if (fs.existsSync(bottomNavPath)) {
+  const nav = fs.readFileSync(bottomNavPath, "utf8");
+  for (const marker of ["appMode === 'kids'", "id === 'remote' || id === 'settings'", "aria-current", "data-visible-tabs"]) {
+    if (!nav.includes(marker)) failures.push(`Semantic navigation missing: ${marker}`);
+  }
+}
+
 const syncPath = path.join(root, "src/lib/useAccountSync.ts");
 if (fs.existsSync(syncPath)) {
   const sync = fs.readFileSync(syncPath, "utf8");
@@ -123,8 +132,11 @@ if (fs.existsSync(appPath)) {
 const stylesPath = path.join(root, "src/styles.css");
 if (fs.existsSync(stylesPath)) {
   const styles = fs.readFileSync(stylesPath, "utf8");
-  for (const marker of ["@media (min-width:820px) and (pointer:coarse)", "@media (min-width:900px) and (min-height:700px)", "overscroll-behavior:none", "touch-action:manipulation", "html[data-app-mode='light']", "html[data-app-mode='kids']", ".bottom-nav button:nth-child(2)"]) {
+  for (const marker of ["@media (min-width:820px) and (pointer:coarse)", "@media (min-width:900px) and (min-height:700px)", "overscroll-behavior:none", "touch-action:manipulation", "html[data-app-mode='light']", "html[data-app-mode='kids']", ".bottom-nav--2", ".bottom-nav button:focus-visible"]) {
     if (!styles.includes(marker)) failures.push(`Responsive/theme styling missing: ${marker}`);
+  }
+  if (styles.includes(".bottom-nav button:nth-child(2)") || styles.includes(".bottom-nav button:nth-child(3)")) {
+    failures.push("Responsive/theme styling still uses brittle bottom-nav nth-child hiding");
   }
 }
 
