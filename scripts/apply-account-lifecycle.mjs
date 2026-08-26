@@ -78,8 +78,8 @@ sync = replaceOrFail(
 
 sync = replaceOrFail(
   sync,
-  `    syncNow,\n    signIn,`,
-  `    syncNow,\n    loadCloudCopy,\n    signIn,`,
+  `    syncNow,\n  }\n}`,
+  `    syncNow,\n    loadCloudCopy,\n  }\n}`,
   'return cloud recovery action',
 )
 
