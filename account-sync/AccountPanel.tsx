@@ -1,5 +1,5 @@
-import { Cloud, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound } from 'lucide-react'
-import { useState } from 'react'
+import { Cloud, Eye, EyeOff, LogIn, LogOut, RefreshCw, ShieldCheck, UserRound } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
 import type { AccountSyncStatus } from '../lib/useAccountSync'
 
 export interface AccountPanelProps {
@@ -30,6 +30,14 @@ function statusCopy(status: AccountSyncStatus) {
 export function AccountPanel(props: AccountPanelProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [capsLock, setCapsLock] = useState(false)
+
+  const submitSignIn = (event: FormEvent) => {
+    event.preventDefault()
+    if (props.busy || !email.trim() || !password) return
+    void props.signIn(email, password)
+  }
 
   return (
     <>
@@ -58,18 +66,38 @@ export function AccountPanel(props: AccountPanelProps) {
             </div>
           </>
         ) : (
-          <>
-            <label><span>Email</span><input type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-            <label><span>Password</span><input type="password" autoComplete="current-password" placeholder="8+ characters" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          <form className="account-auth-form" onSubmit={submitSignIn}>
+            <label><span>Email</span><input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+            <label>
+              <span>Password</span>
+              <div className="account-password-field">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="8+ characters"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                  onKeyDown={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                  aria-describedby={capsLock ? 'account-caps-lock' : undefined}
+                />
+                <button type="button" className="account-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </button>
+              </div>
+              {capsLock && <small id="account-caps-lock" className="account-caps-lock" role="status">Caps Lock is on.</small>}
+            </label>
             <div className="bridge-test-row">
-              <button className="button-primary" type="button" disabled={props.busy || !email.trim() || !password} onClick={() => void props.signIn(email, password)}><LogIn /> {props.busy ? 'Working…' : 'Sign in'}</button>
+              <button className="button-primary" type="submit" disabled={props.busy || !email.trim() || !password}><LogIn /> {props.busy ? 'Working…' : 'Sign in'}</button>
               <button className="button-secondary" type="button" disabled={props.busy || !email.trim() || password.length < 8} onClick={() => void props.signUp(email, password)}><UserRound /> Create account</button>
             </div>
             <small>Your current setup will become the starting profile when you create an account. Google/Apple login can be linked later without changing your saved TV Phone data.</small>
-          </>
+          </form>
         )}
-        {props.message && <div className="security-note"><Cloud /><span>{props.message}</span></div>}
-        {props.error && <div className="security-note"><span><strong>Account error</strong><br />{props.error}</span></div>}
+        {props.message && <div className="security-note" role="status"><Cloud /><span>{props.message}</span></div>}
+        {props.error && <div className="security-note" role="alert"><span><strong>Account error</strong><br />{props.error}</span></div>}
       </div>
     </>
   )
