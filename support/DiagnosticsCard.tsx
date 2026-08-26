@@ -2,6 +2,7 @@ import { CheckCircle2, Clipboard, ClipboardCheck, ShieldCheck, Stethoscope } fro
 import { useMemo, useState } from 'react'
 import type { TvDevice, BridgeConfig } from '../types/remote'
 import type { AppMode } from '../lib/appMode'
+import { isUntouchedSampleDevice } from '../lib/sampleProvenance'
 import type { AccountPanelProps } from './AccountPanel'
 
 interface Props {
@@ -24,8 +25,14 @@ export function DiagnosticsCard({ devices, bridgeConfig, appMode, account }: Pro
   const bridgeConfigured = Boolean(bridgeUrl && bridgeConfig.token.trim())
   const bridgeProtocol = /^https:\/\//i.test(bridgeUrl) ? 'https' : /^http:\/\//i.test(bridgeUrl) ? 'http' : bridgeUrl ? 'other' : 'none'
   const mixedContentRisk = typeof window !== 'undefined' && window.location.protocol === 'https:' && bridgeProtocol === 'http'
-  const samsungCount = devices.filter((device) => device.kind === 'samsung').length
-  const fireTvCount = devices.filter((device) => device.kind === 'firetv').length
+  const realDevices = useMemo(() => devices.filter((device) => !isUntouchedSampleDevice(device)), [devices])
+  const samsungCount = realDevices.filter((device) => device.kind === 'samsung').length
+  const fireTvCount = realDevices.filter((device) => device.kind === 'firetv').length
+  const comboCount = realDevices.filter((device) => device.kind === 'combo').length
+  const samsungNeedsPairing = realDevices.filter((device) => device.kind === 'samsung' && !device.token).length
+  const fireTvNeedsPairing = realDevices.filter((device) => device.kind === 'firetv' && !(device.bridgeToken || device.remoteCertificate)).length
+  const fireTvTransportNeedsAttention = fireTvCount > 0 && (!bridgeConfigured || mixedContentRisk)
+  const localRepairCandidates = samsungNeedsPairing + fireTvNeedsPairing + (fireTvTransportNeedsAttention ? fireTvCount : 0)
 
   const report = useMemo(() => ({
     generatedAt: new Date().toISOString(),
@@ -33,10 +40,17 @@ export function DiagnosticsCard({ devices, bridgeConfig, appMode, account }: Pro
     standalone: standaloneMode(),
     appMode,
     devices: {
-      total: devices.length,
+      total: realDevices.length,
       samsung: samsungCount,
       fireTv: fireTvCount,
-      other: Math.max(0, devices.length - samsungCount - fireTvCount),
+      combo: comboCount,
+    },
+    recovery: {
+      samsungNeedsPairing,
+      fireTvNeedsPairing,
+      fireTvTransportNeedsAttention,
+      combinedSetupsToVerify: comboCount,
+      localRepairCandidates,
     },
     bridge: {
       configured: bridgeConfigured,
@@ -50,7 +64,7 @@ export function DiagnosticsCard({ devices, bridgeConfig, appMode, account }: Pro
       status: account.status,
     },
     privacy: 'TV names, rooms, addresses, URLs, tokens, certificates, passwords, PINs, and account email are excluded.',
-  }), [account.configured, account.ready, account.signedIn, account.status, appMode, bridgeConfigured, bridgeProtocol, devices.length, fireTvCount, mixedContentRisk, samsungCount])
+  }), [account.configured, account.ready, account.signedIn, account.status, appMode, bridgeConfigured, bridgeProtocol, comboCount, fireTvCount, fireTvNeedsPairing, fireTvTransportNeedsAttention, localRepairCandidates, mixedContentRisk, realDevices.length, samsungCount, samsungNeedsPairing])
 
   const copyReport = async () => {
     try {
@@ -72,8 +86,9 @@ export function DiagnosticsCard({ devices, bridgeConfig, appMode, account }: Pro
         </div>
 
         <div className="diagnostics-grid" aria-label="Current diagnostic summary">
-          <span><CheckCircle2 /> {devices.length} TV{devices.length === 1 ? '' : 's'} configured</span>
+          <span><CheckCircle2 /> {realDevices.length} real TV{realDevices.length === 1 ? '' : 's'} configured</span>
           <span><CheckCircle2 /> Bridge {bridgeConfigured ? 'configured' : 'not configured'}</span>
+          <span><CheckCircle2 /> {localRepairCandidates ? `${localRepairCandidates} local repair signal${localRepairCandidates === 1 ? '' : 's'}` : 'No local repair signals'}</span>
           <span><CheckCircle2 /> Account {account.signedIn ? account.status : 'local only'}</span>
           <span><CheckCircle2 /> {typeof navigator !== 'undefined' && navigator.onLine ? 'Online' : 'Offline'}</span>
         </div>
