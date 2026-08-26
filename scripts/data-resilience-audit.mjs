@@ -11,7 +11,6 @@ const required = [
   'latestVersionRef.current = Math.max(latestVersionRef.current, row.version)',
   'applyState(user.id, state, remote.updated_at, remote.version)',
   'applyState(user.id, state, row.updated_at, row.version)',
-  "safeGetLocal('tv-phone:demo')",
   "safeSetLocal('tv-phone:haptics'",
   "safeSetLocal('tv-phone:keep-awake'",
 ]
