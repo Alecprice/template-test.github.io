@@ -8,15 +8,17 @@ interface StoredParentLock {
   iterations: number
 }
 
-function encodeBase64(bytes: Uint8Array) {
+function encodeBase64(bytes: Uint8Array<ArrayBuffer>) {
   let binary = ''
   for (const byte of bytes) binary += String.fromCharCode(byte)
   return btoa(binary)
 }
 
-function decodeBase64(value: string) {
+function decodeBase64(value: string): Uint8Array<ArrayBuffer> {
   const binary = atob(value)
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0))
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+  return bytes
 }
 
 function readLock(): StoredParentLock | undefined {
@@ -42,7 +44,7 @@ function writeLock(value: StoredParentLock | undefined) {
   }
 }
 
-async function derivePin(pin: string, salt: Uint8Array, iterations: number) {
+async function derivePin(pin: string, salt: Uint8Array<ArrayBuffer>, iterations: number) {
   if (!globalThis.crypto?.subtle) throw new Error('Secure PIN storage is unavailable in this browser')
   const material = await crypto.subtle.importKey(
     'raw',
@@ -52,7 +54,7 @@ async function derivePin(pin: string, salt: Uint8Array, iterations: number) {
     ['deriveBits'],
   )
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    { name: 'PBKDF2', hash: 'SHA-256', salt: salt.buffer, iterations },
     material,
     256,
   )
