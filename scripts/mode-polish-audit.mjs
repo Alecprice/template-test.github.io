@@ -4,7 +4,7 @@ const failures = []
 const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : ''
 
 const kids = read('src/components/KidsModeSettings.tsx')
-for (const marker of ['HOLD_MS = 1600', 'UNLOCK_WINDOW_MS = 20_000', 'onPointerDown={startHold}', 'onKeyDown=', 'not a parental-control PIN or security boundary']) {
+for (const marker of ['HOLD_MS = 1600', 'UNLOCK_WINDOW_MS = 20_000', 'onPointerDown={startHold}', 'onKeyDown=', 'not a replacement for TV or streaming-service parental controls']) {
   if (!kids.includes(marker)) failures.push(`Kids Safe unlock guard missing: ${marker}`)
 }
 
