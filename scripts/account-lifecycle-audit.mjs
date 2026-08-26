@@ -25,14 +25,17 @@ for (const marker of [
 
 const remoteRead = sync.indexOf('const remote = await fetchRemoteState(user.id)')
 const remoteVersionGuard = sync.indexOf('if (remote.version > baseVersion)', remoteRead)
-const push = sync.indexOf('const row = await pushRemoteState(user.id, state, clientIdRef.current!)', remoteRead)
-if (remoteRead < 0 || remoteVersionGuard < 0 || push < 0 || !(remoteRead < remoteVersionGuard && remoteVersionGuard < push)) {
-  throw new Error('Account lifecycle audit failed: reconnect must check remote version before push')
+const expectedVersion = sync.indexOf('const expectedVersion = remote?.version ?? (remoteBaseRef.current?.version ?? latestVersionRef.current)', remoteRead)
+const push = sync.indexOf('pushRemoteState(user.id, state, clientIdRef.current!, expectedVersion)', remoteRead)
+if (remoteRead < 0 || remoteVersionGuard < 0 || expectedVersion < 0 || push < 0 || !(remoteRead < remoteVersionGuard && remoteVersionGuard < expectedVersion && expectedVersion < push)) {
+  throw new Error('Account lifecycle audit failed: reconnect must check remote version before compare-and-swap push')
 }
 
 for (const marker of [
   'loadCloudCopy: () => Promise<void>',
+  'keepLocalCopy: () => Promise<void>',
   "const syncConflict = props.status === 'error' && props.error.includes('newer cloud version')",
+  'Keep this device',
   'Load cloud copy',
 ]) {
   if (!panel.includes(marker)) throw new Error(`Account lifecycle audit failed: panel missing ${marker}`)
