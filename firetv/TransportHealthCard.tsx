@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Cloud, Router, ShieldAlert } from 'lucide-react'
-import type { BridgeConfig, TvDevice } from '../src/types/remote'
+import type { BridgeConfig, TvDevice } from '../types/remote'
 
 interface Props {
   devices: TvDevice[]
