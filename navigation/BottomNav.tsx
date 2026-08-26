@@ -1,11 +1,11 @@
 import { Home, Play, Settings, Tv } from 'lucide-react'
 import type { AppMode } from '../lib/appMode'
 
-export type AppTab = 'remote' | 'devices' | 'activities' | 'settings'
+export type Tab = 'remote' | 'devices' | 'activities' | 'settings'
 
 interface Props {
-  active: AppTab
-  onChange: (tab: AppTab) => void
+  active: Tab
+  onChange: (tab: Tab) => void
   appMode?: AppMode
 }
 
