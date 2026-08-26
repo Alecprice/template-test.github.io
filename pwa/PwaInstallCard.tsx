@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Share2, Smartphone } from 'lucide-react'
+import { CheckCircle2, Download, RefreshCw, Share2, Smartphone, Wifi, WifiOff } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 interface InstallPromptEvent extends Event {
@@ -20,6 +20,9 @@ function isAppleMobile() {
 export function PwaInstallCard() {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(() => isStandaloneMode())
+  const [online, setOnline] = useState(() => navigator.onLine)
+  const [serviceWorkerReady, setServiceWorkerReady] = useState(() => Boolean(navigator.serviceWorker?.controller))
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [message, setMessage] = useState('')
   const appleMobile = useMemo(() => isAppleMobile(), [])
 
@@ -35,13 +38,24 @@ export function PwaInstallCard() {
     }
     const displayMode = window.matchMedia?.('(display-mode: standalone)')
     const displayChanged = () => setInstalled(isStandaloneMode())
+    const wentOnline = () => setOnline(true)
+    const wentOffline = () => setOnline(false)
+    const controllerChanged = () => setServiceWorkerReady(Boolean(navigator.serviceWorker?.controller))
 
     window.addEventListener('beforeinstallprompt', beforeInstall)
     window.addEventListener('appinstalled', appInstalled)
+    window.addEventListener('online', wentOnline)
+    window.addEventListener('offline', wentOffline)
+    navigator.serviceWorker?.addEventListener('controllerchange', controllerChanged)
     displayMode?.addEventListener?.('change', displayChanged)
+    void navigator.serviceWorker?.ready.then(() => setServiceWorkerReady(Boolean(navigator.serviceWorker?.controller)))
+
     return () => {
       window.removeEventListener('beforeinstallprompt', beforeInstall)
       window.removeEventListener('appinstalled', appInstalled)
+      window.removeEventListener('online', wentOnline)
+      window.removeEventListener('offline', wentOffline)
+      navigator.serviceWorker?.removeEventListener('controllerchange', controllerChanged)
       displayMode?.removeEventListener?.('change', displayChanged)
     }
   }, [])
@@ -61,6 +75,25 @@ export function PwaInstallCard() {
       }
     } catch {
       setMessage('Use your browser menu and choose Install app or Add to Home Screen.')
+    }
+  }
+
+  const checkForUpdate = async () => {
+    if (!('serviceWorker' in navigator) || checkingUpdate) return
+    setCheckingUpdate(true)
+    setMessage('')
+    try {
+      const registration = await navigator.serviceWorker.getRegistration()
+      if (!registration) {
+        setMessage('The offline app worker is not active yet. Reload once, then check again.')
+        return
+      }
+      await registration.update()
+      setMessage('Update check complete. TV Phone installs new app versions automatically.')
+    } catch {
+      setMessage('Could not check for an update right now. TV Phone will retry automatically.')
+    } finally {
+      setCheckingUpdate(false)
     }
   }
 
@@ -91,6 +124,17 @@ export function PwaInstallCard() {
             <div className="settings-icon"><Smartphone /></div>
             <div><strong>Install from your browser</strong><span>Use the browser menu and choose “Install app” or “Add to Home screen.” Android and desktop browsers can then launch TV Phone like an app.</span></div>
           </div>
+        )}
+
+        <div className={`pwa-runtime-status ${online ? 'pwa-runtime-status--online' : 'pwa-runtime-status--offline'}`} role="status">
+          <div>{online ? <Wifi /> : <WifiOff />}</div>
+          <span><strong>{online ? 'Network available' : 'Offline right now'}</strong><small>{online ? (serviceWorkerReady ? 'Offline app shell is active on this device.' : 'The app is online; offline shell activation is still finishing.') : 'The cached app shell can still open. Cloud sync and hosted network features resume when connectivity returns.'}</small></span>
+        </div>
+
+        {'serviceWorker' in navigator && (
+          <button className="button-secondary pwa-update-button" type="button" onClick={() => void checkForUpdate()} disabled={checkingUpdate}>
+            <RefreshCw className={checkingUpdate ? 'is-spinning' : ''} /> {checkingUpdate ? 'Checking…' : 'Check for app update'}
+          </button>
         )}
         {message && <small className="pwa-install-message" aria-live="polite">{message}</small>}
       </div>
