@@ -1,4 +1,4 @@
-import { streamingServices, type StreamingServiceId } from '../src/lib/streamingServices'
+import { streamingServices, type StreamingServiceId } from './streamingServices'
 
 const KEY = 'tv-phone:kids-streaming:v1'
 
