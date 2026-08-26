@@ -11,6 +11,7 @@ const requiredApp = [
   'Parent controls',
   'empty-onboarding__settings',
   '<BottomNav active={tab} onChange={setTab} appMode={appMode} />',
+  'stripUntouchedSampleDevices(devices)',
 ]
 for (const marker of requiredApp) {
   if (!app.includes(marker)) throw new Error(`Onboarding reliability audit failed: App missing ${marker}`)
@@ -20,19 +21,15 @@ if (app.includes('<main className="fatal-state"><h1>No devices</h1>')) {
 }
 
 const requiredSync = [
-  'untouchedDemo',
-  "'samsung-living'",
-  "'fire-living'",
-  "'combo-living'",
-  "'fire-bedroom'",
-  "'watch-fire'",
-  "'tv-only'",
-  'const devices = untouchedDemo ? [] : sanitizedDevices',
-  'const activities = untouchedDemo ? [] : current.activities',
-  "url: untouchedDemo ? '' : current.bridgeConfig.url.trim()",
+  'stripUntouchedSampleDevices(current.devices)',
+  'stripUntouchedSampleActivities(current.activities)',
+  'const activities = stripUntouchedSampleActivities(current.activities)',
 ]
 for (const marker of requiredSync) {
   if (!sync.includes(marker)) throw new Error(`Onboarding reliability audit failed: sync missing ${marker}`)
+}
+for (const forbidden of ['demoFingerprintMatches', 'const demoDeviceIds', 'const untouchedDemo']) {
+  if (sync.includes(forbidden)) throw new Error(`Onboarding reliability audit failed: brittle demo heuristic remains: ${forbidden}`)
 }
 const requiredStyles = [
   '.empty-onboarding__settings',
