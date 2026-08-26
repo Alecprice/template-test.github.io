@@ -1,13 +1,13 @@
 import { AlertTriangle, Clipboard, ClipboardCheck, Laptop, Router, ShieldCheck, Smartphone, Tv } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { BridgeConfig, TvDevice } from '../types/remote'
+import { isUntouchedSampleDevice } from '../lib/sampleProvenance'
 
 interface Props {
   devices: TvDevice[]
   bridgeConfig: BridgeConfig
 }
 
-const DEMO_DEVICE_IDS = new Set(['samsung-living', 'fire-living', 'combo-living', 'fire-bedroom'])
 const SETUP_COMMANDS = `npm install
 npm run bridge:setup
 npm run bridge:doctor
@@ -23,7 +23,7 @@ export function SetupGuideCard({ devices, bridgeConfig }: Props) {
   const hostedHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
   const localHttpBridge = /^http:\/\//i.test(bridgeUrl)
   const blockedByBrowser = hostedHttps && localHttpBridge
-  const realDevices = useMemo(() => devices.filter((device) => !DEMO_DEVICE_IDS.has(device.id)), [devices])
+  const realDevices = useMemo(() => devices.filter((device) => !isUntouchedSampleDevice(device)), [devices])
 
   const copyCommands = async () => {
     try {
