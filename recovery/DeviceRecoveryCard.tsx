@@ -111,14 +111,7 @@ export function DeviceRecoveryCard({ devices, bridgeConfig }: Props) {
       }
     }
 
-    return {
-      id: device.id,
-      name: device.name,
-      kind: device.kind,
-      level: 'verify',
-      title: 'TV setup needs verification',
-      detail: 'Test the available controls and repair only the transport that is not responding.',
-    }
+    throw new Error('Unsupported TV kind')
   })
 
   const actionCount = items.filter((item) => item.level === 'action').length
