@@ -18,6 +18,10 @@ export interface TvPhoneBackupV1 {
 }
 
 const SECRET_KEYS = new Set(['token', 'bridgeToken', 'remoteCertificate', 'lastSeen'])
+const MAX_DEVICES = 64
+const MAX_ACTIVITIES = 250
+const MAX_ID_LENGTH = 160
+const MAX_NAME_LENGTH = 200
 
 function cleanValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(cleanValue)
@@ -35,17 +39,68 @@ function cleanValue(value: unknown): unknown {
   return cleaned
 }
 
-function cleanDevices(value: unknown): TvDevice[] {
-  if (!Array.isArray(value)) return []
-  return value
-    .filter((entry) => entry && typeof entry === 'object')
-    .map((entry) => cleanValue(entry) as TvDevice)
-    .filter((device) => typeof device.id === 'string' && typeof device.name === 'string' && (device.kind === 'samsung' || device.kind === 'firetv' || device.kind === 'combo'))
+function validText(value: unknown, max: number) {
+  return typeof value === 'string' && value.trim().length > 0 && value.length <= max
 }
 
-function cleanActivities(value: unknown): Activity[] {
-  if (!Array.isArray(value)) return []
-  return value.filter((entry) => entry && typeof entry === 'object').map((entry) => cleanValue(entry) as Activity)
+function cleanDevices(value: unknown, strict = false): TvDevice[] {
+  if (!Array.isArray(value)) {
+    if (strict) throw new Error('Backup TVs must be a list.')
+    return []
+  }
+  if (value.length > MAX_DEVICES) throw new Error(`Backup contains more than ${MAX_DEVICES} TVs.`)
+  const seen = new Set<string>()
+  const devices: TvDevice[] = []
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      if (strict) throw new Error('Backup contains an invalid TV entry.')
+      continue
+    }
+    const device = cleanValue(entry) as TvDevice
+    const valid = validText(device.id, MAX_ID_LENGTH)
+      && validText(device.name, MAX_NAME_LENGTH)
+      && typeof device.room === 'string'
+      && (device.kind === 'samsung' || device.kind === 'firetv' || device.kind === 'combo')
+    if (!valid) {
+      if (strict) throw new Error('Backup contains a TV with missing or invalid fields.')
+      continue
+    }
+    if (seen.has(device.id)) {
+      if (strict) throw new Error(`Backup contains duplicate TV id “${device.id}”.`)
+      continue
+    }
+    seen.add(device.id)
+    devices.push(device)
+  }
+  return devices
+}
+
+function cleanActivities(value: unknown, strict = false): Activity[] {
+  if (!Array.isArray(value)) {
+    if (strict) throw new Error('Backup activities must be a list.')
+    return []
+  }
+  if (value.length > MAX_ACTIVITIES) throw new Error(`Backup contains more than ${MAX_ACTIVITIES} activities.`)
+  const seen = new Set<string>()
+  const activities: Activity[] = []
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      if (strict) throw new Error('Backup contains an invalid activity entry.')
+      continue
+    }
+    const activity = cleanValue(entry) as Activity
+    if (!validText(activity.id, MAX_ID_LENGTH) || !validText(activity.name, MAX_NAME_LENGTH)) {
+      if (strict) throw new Error('Backup contains an activity with missing or invalid fields.')
+      continue
+    }
+    if (seen.has(activity.id)) {
+      if (strict) throw new Error(`Backup contains duplicate activity id “${activity.id}”.`)
+      continue
+    }
+    seen.add(activity.id)
+    activities.push(activity)
+  }
+  return activities
 }
 
 export function createTvPhoneBackup(input: Omit<TvPhoneBackupV1, 'schemaVersion' | 'exportedAt'>): TvPhoneBackupV1 {
@@ -68,10 +123,11 @@ export function createTvPhoneBackup(input: Omit<TvPhoneBackupV1, 'schemaVersion'
 
 export function parseTvPhoneBackup(value: unknown): TvPhoneBackupV1 {
   if (!value || typeof value !== 'object') throw new Error('That file is not a TV Phone backup.')
+  if (backupContainsSecretKeys(value)) throw new Error('That backup contains pairing or connection secrets and cannot be restored.')
   const raw = value as Partial<TvPhoneBackupV1>
   if (raw.schemaVersion !== 1) throw new Error('This backup version is not supported.')
-  const devices = cleanDevices(raw.devices)
-  const activities = cleanActivities(raw.activities)
+  const devices = cleanDevices(raw.devices, true)
+  const activities = cleanActivities(raw.activities, true)
   const activeDeviceId = devices.some((device) => device.id === raw.activeDeviceId) ? raw.activeDeviceId! : devices[0]?.id ?? ''
   return {
     schemaVersion: 1,
