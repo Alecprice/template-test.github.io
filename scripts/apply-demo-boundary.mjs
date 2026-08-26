@@ -16,6 +16,12 @@ app = replaceOrFail(
 )
 app = replaceOrFail(
   app,
+  `  const [demoMode, setDemoMode] = useState(() => localStorage.getItem('tv-phone:demo') !== 'false')`,
+  `  const [demoMode, setDemoMode] = useState(() => {\n    const explicit = localStorage.getItem('tv-phone:demo')\n    if (explicit !== null) return explicit !== 'false'\n    return stripUntouchedSampleDevices(devices).length === 0\n  })`,
+  'demo default follows saved real setup',
+)
+app = replaceOrFail(
+  app,
   `  useEffect(() => {\n    if (!account.syncGeneration) return\n    void manager.invalidate()\n    setLiveStates({})\n  }, [account.syncGeneration, manager])`,
   `  useEffect(() => {\n    if (!account.syncGeneration) return\n    void manager.invalidate()\n    setLiveStates({})\n    if (demoMode && stripUntouchedSampleDevices(devices).length > 0) {\n      setDemoMode(false)\n      localStorage.setItem('tv-phone:demo', 'false')\n      setStatusText('Account setup loaded · real-device mode enabled')\n    }\n  }, [account.syncGeneration, manager, demoMode, devices])`,
   'cloud hydrate exits demo for real account data',
