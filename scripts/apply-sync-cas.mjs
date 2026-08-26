@@ -10,7 +10,7 @@ let sync = await readFile('src/lib/useAccountSync.ts', 'utf8')
 const pushStart = sync.indexOf('async function pushRemoteState(')
 const pushEnd = sync.indexOf('\n}\n\nexport function useAccountSync', pushStart)
 if (pushStart < 0 || pushEnd < 0) throw new Error('Sync CAS patch failed: pushRemoteState block')
-sync = `${sync.slice(0, pushStart)}async function pushRemoteState(userId: string, state: AccountStateV1, clientId: string, expectedVersion: number): Promise<RemoteRow | null> {\n  if (!supabase) throw new Error('Cloud sync is not configured')\n  void userId\n  const { data, error } = await supabase.rpc('compare_and_swap_user_sync_state', {\n    p_expected_version: expectedVersion,\n    p_state: state,\n    p_updated_by_device_id: clientId,\n  })\n  if (error) throw error\n  if (!data) return null\n  return data as RemoteRow\n${sync.slice(pushEnd)}`
+sync = `${sync.slice(0, pushStart)}async function pushRemoteState(userId: string, state: AccountStateV1, clientId: string, expectedVersion: number): Promise<RemoteRow | null> {\n  const supabase = await getSupabase()\n  if (!supabase) throw new Error('Cloud sync is not configured')\n  void userId\n  const { data, error } = await supabase.rpc('compare_and_swap_user_sync_state', {\n    p_expected_version: expectedVersion,\n    p_state: state,\n    p_updated_by_device_id: clientId,\n  })\n  if (error) throw error\n  const payload = Array.isArray(data) ? data[0] : data\n  if (!payload) return null\n  return payload as RemoteRow\n${sync.slice(pushEnd)}`
 
 sync = replaceOrFail(
   sync,
@@ -32,8 +32,8 @@ sync = sync.replace(loadCloudEnd, `  }, [user, applyState])\n\n  const keepLocal
 
 sync = replaceOrFail(
   sync,
-  `    syncNow,\n    loadCloudCopy,\n    signIn,`,
-  `    syncNow,\n    loadCloudCopy,\n    keepLocalCopy,\n    signIn,`,
+  `    syncNow,\n    loadCloudCopy,\n  }\n}`,
+  `    syncNow,\n    loadCloudCopy,\n    keepLocalCopy,\n  }\n}`,
   'return keep local action',
 )
 
