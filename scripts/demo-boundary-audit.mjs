@@ -6,6 +6,9 @@ const provenance = await readFile('src/lib/sampleProvenance.ts', 'utf8')
 
 for (const marker of [
   "from './lib/sampleProvenance'",
+  "const explicit = localStorage.getItem('tv-phone:demo')",
+  "if (explicit !== null) return explicit !== 'false'",
+  'return stripUntouchedSampleDevices(devices).length === 0',
   "setStatusText('Account setup loaded · real-device mode enabled')",
   'const baseDevices = stripUntouchedSampleDevices(devices)',
   'if (demoMode) setDemo(false)',
